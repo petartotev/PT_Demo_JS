@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astronauts in Space</title>
+    <!-- Bootstrap CSS for styling (optional but recommended) -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"> 
+    <!-- Link to Font Awesome for the user icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+        .craft-section {
+            margin-bottom: 40px;
+        }
+        .craft-title {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #343a40;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .astronaut-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .astronaut-card:hover {
+            transform: translateY(-5px);
+        }
+        .astronaut-icon {
+            font-size: 40px;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .astronaut-name {
+            font-size: 1.0em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .craft-name {
+            font-size: 0.75em;
+            color: #007bff;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .craft-title {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="text-center mb-5">Astronauts Currently in Space</h1>
+        <div id="astronauts-container">
+            <!-- Spacecraft sections will be injected here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Function to group astronauts by their craft
+        function groupByCraft(people) {
+            return people.reduce((groups, astronaut) => {
+                const { craft } = astronaut;
+                if (!groups[craft]) {
+                    groups[craft] = [];
+                }
+                groups[craft].push(astronaut);
+                return groups;
+            }, {});
+        }
+
+        // Function to create astronaut cards
+        function createAstronautCard(astronaut) {
+            const card = document.createElement('div');
+            card.classList.add('col-md-3', 'col-sm-6', 'astronaut-card');
+
+            // Creating Google search URL for astronaut's name and craft name
+            const googleSearchAstronautUrl = `https://www.google.com/search?q=${encodeURIComponent(astronaut.name)}`;
+            const googleSearchCraftUrl = `https://www.google.com/search?q=${encodeURIComponent(astronaut.craft)}`;
+
+            card.innerHTML = `
+                <div class="astronaut-icon"><i class="fa-regular fa-user"></i></div>
+                <div class="astronaut-name">
+                    <a href="${googleSearchAstronautUrl}" target="_blank">${astronaut.name}</a>
+                </div>
+                <div class="craft-name">
+                    <a href="${googleSearchCraftUrl}" target="_blank">Craft: ${astronaut.craft}</a>
+                </div>
+            `;
+            return card;
+        }
+
+        // Function to create a section for each craft
+        function createCraftSection(craft, astronauts) {
+            const section = document.createElement('div');
+            section.classList.add('craft-section');
+
+            // Craft Title
+            const title = document.createElement('h2');
+            title.classList.add('craft-title');
+            title.textContent = craft;
+            section.appendChild(title);
+
+            // Row for astronaut cards
+            const row = document.createElement('div');
+            row.classList.add('row');
+
+            astronauts.forEach(astronaut => {
+                const card = createAstronautCard(astronaut);
+                row.appendChild(card);
+            });
+
+            section.appendChild(row);
+            return section;
+        }
+
+        // Fetch data from the API and render the grouped astronauts
+        fetch('http://api.open-notify.org/astros.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const { people, message } = data;
+                if (message !== "success") {
+                    throw new Error("API did not return success message.");
+                }
+
+                const groupedAstronauts = groupByCraft(people);
+                const container = document.getElementById('astronauts-container');
+
+                for (const [craft, astronauts] of Object.entries(groupedAstronauts)) {
+                    const craftSection = createCraftSection(craft, astronauts);
+                    container.appendChild(craftSection);
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching astronaut data:", error);
+                const container = document.getElementById('astronauts-container');
+                container.innerHTML = `<div class="alert alert-danger" role="alert">
+                    Failed to load astronaut data. Please try again later.
+                </div>`;
+            });
+    </script>
+
+    <!-- Bootstrap JS and dependencies (optional for advanced functionality) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script> 
+</body>
+</html>
